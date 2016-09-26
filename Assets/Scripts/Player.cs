@@ -3,49 +3,59 @@ using System.Collections;
 using UnityEngine.SceneManagement;
 
 public class Player : MonoBehaviour {
-    public float m_ForwardSpeed = 5;
-    public float m_HorizontalSpeed = 2;
-    public float m_Health = 3;
-    public float m_SpeedIncrease = 0.5f;
+    public float forwardSpeed = 5;
+    public float horizontalSpeed = 2;
+    public float health = 3;
+    public float acceleration = 0.5f;	// acceleration
+	public GameObject followPlayer;
+	Vector3 followPlayerDistance;
 
-    /// <summary>
-    /// Max distance from center of ground
-    /// </summary>
-    private float m_MaxSideMovement = 5f;
-
-	// Use this for initialization
-	void Start () {
-	
+	void Start() {
+		if (followPlayer != null) {
+			followPlayerDistance = followPlayer.transform.position - transform.position;
+		}
 	}
-	
-	// Update is called once per frame
-	void Update () {
+
+	void FixedUpdate () {
         // keep increasing forward speed
-        m_ForwardSpeed += m_SpeedIncrease * Time.deltaTime;
+		forwardSpeed += acceleration * Time.fixedDeltaTime;
 
-        // if we have a parent, move that instead
-        var trans = transform.parent;
-        if (trans == null) {
-            trans = transform;
-        }
-        var pos = trans.position;
+		// compute forward and sideward movement
+		var pos = transform.position;
+		var dx = horizontalSpeed * Input.GetAxis("Horizontal");
+        var dz = forwardSpeed;
 
-        // compute forward and sideward movement
-        var dz = m_ForwardSpeed * Time.deltaTime;
-        var dx = m_ForwardSpeed * Input.GetAxis("Horizontal") * Time.deltaTime;
+		var body = GetComponent<Rigidbody> ();
+		var v = body.velocity;
 
-        // make sure, we won't go too left or right
-        var minX = -m_MaxSideMovement + transform.localScale.x / 2;
-        var maxX = m_MaxSideMovement - transform.localScale.x / 2;
-        dx = Mathf.Clamp(pos.x + dx, minX, maxX) - pos.x;
+		v.x = dx;
+		v.z = dz;
 
-        trans.Translate(dx, 0, dz);
+		// rotate velocity to facing direction
+		v = transform.localRotation * v;
+
+		body.velocity = v;
+
+		// player dies when falling too low
+		if (pos.y < -10) {
+			Die ();
+		}
+
+		// let object automatically follow player
+		if (followPlayer != null) {
+			followPlayer.transform.position = transform.position + followPlayerDistance;
+			followPlayer.transform.localRotation = transform.localRotation;
+		}
     }
 
     public void AddHealth(float health) {
-        m_Health += health;
-        if (m_Health <= 0) {
-            SceneManager.LoadScene(0);
+        health += health;
+        if (health <= 0) {
+			Die ();
         }
     }
+
+	void Die() {
+		SceneManager.LoadScene(0);
+	}
 }
