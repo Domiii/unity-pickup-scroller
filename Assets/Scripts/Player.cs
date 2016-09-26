@@ -32,7 +32,9 @@ public class Player : MonoBehaviour {
 		v.z = dz;
 
 		// rotate velocity to facing direction
-		v = transform.localRotation * v;
+		var angles = Camera.main.transform.localRotation.eulerAngles;
+		angles.x = 0;
+		v = Quaternion.Euler(angles) * v;
 
 		body.velocity = v;
 
@@ -44,7 +46,7 @@ public class Player : MonoBehaviour {
 		// let object automatically follow player
 		if (followPlayer != null) {
 			followPlayer.transform.position = transform.position + followPlayerDistance;
-			followPlayer.transform.localRotation = transform.localRotation;
+			followPlayer.transform.localRotation = Quaternion.RotateTowards (followPlayer.transform.localRotation, transform.localRotation, 45 * Time.fixedDeltaTime);
 		}
     }
 
